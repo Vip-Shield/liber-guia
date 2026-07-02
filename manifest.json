@@ -1,0 +1,21 @@
+{
+  "name": "Tracker de Leitura",
+  "short_name": "Leitura PWA",
+  "description": "Acompanhe sua meta diária de leitura.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1a202c",
+  "theme_color": "#f6ad55",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/f6ad55/1a202c?text=Livro",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512/f6ad55/1a202c?text=Livro",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
