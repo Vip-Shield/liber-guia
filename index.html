@@ -211,7 +211,7 @@
     <div class="container" id="lista-screen">
         <h1>Minha Biblioteca</h1>
         <div class="livros-lista" id="lista-containers">
-            </div>
+        </div>
         <button onclick="navegarPara('setup')">Adicionar Novo Livro</button>
     </div>
 
@@ -257,6 +257,50 @@
         <button class="secondary" onclick="navegarPara('lista')">Cancelar</button>
     </div>
 
+    <!-- NOVA TELA DE EDIÇÃO ADICIONADA AQUI -->
+    <div class="container hidden" id="edit-screen">
+        <h1>Editar Propósito</h1>
+        
+        <div class="form-group">
+            <label for="editBookName">Título do Livro:</label>
+            <input type="text" id="editBookName" placeholder="Ex: Livro ou Meta Específica" required>
+        </div>
+
+        <div class="form-group">
+            <label>Ritmo Diário:</label>
+            <div class="radio-group">
+                <input type="radio" id="editRitmo05" name="editRitmo" value="5">
+                <label for="editRitmo05">05 Págs/Dia</label>
+
+                <input type="radio" id="editRitmo10" name="editRitmo" value="10">
+                <label for="editRitmo10">10 Págs/Dia</label>
+
+                <input type="radio" id="editRitmo20" name="editRitmo" value="20">
+                <label for="editRitmo20">20 Págs/Dia</label>
+
+                <input type="radio" id="editRitmo50" name="editRitmo" value="50">
+                <label for="editRitmo50">50 Págs/Dia</label>
+                
+                <input type="radio" id="editRitmo70" name="editRitmo" value="70">
+                <label for="editRitmo70">70 Págs/Dia</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="editInputType">Definir meta por:</label>
+            <select id="editInputType">
+                <option value="pages">Total de Páginas do Livro</option>
+                <option value="days">Total de Dias Desejados</option>
+            </select>
+            
+            <input type="number" id="editInputValue" placeholder="Ex: 350 páginas" required>
+        </div>
+
+        <button onclick="salvarEdicaoLivro()">Salvar Alterações</button>
+        <button class="secondary" onclick="navegarPara('tracker')">Cancelar</button>
+    </div>
+    <!-- FIM DA TELA DE EDIÇÃO -->
+
     <div class="container hidden" id="tracker-screen">
         <h2 id="tracker-title">Título do Livro</h2>
         <div class="progress-header" id="progress-text">
@@ -267,8 +311,10 @@
         </div>
         
         <div class="checklist" id="checklist">
-            </div>
+        </div>
 
+        <!-- NOVO BOTÃO DE EDIÇÃO INSERIDO AQUI -->
+        <button class="secondary" onclick="abrirEdicaoLivro()">Editar Livro</button>
         <button class="secondary" onclick="navegarPara('lista')">Voltar para Biblioteca</button>
         <button class="danger" onclick="excluirLivroAtual()">Remover este Livro</button>
     </div>
