@@ -440,7 +440,8 @@
             let totalDias = tipo === 'pages' ? Math.ceil(valor / ritmo) : valor;
             let dias = Array.from({length: totalDias}, () => ({ concluido: false, dataConclusao: null }));
 
-            meusLivros.push({ titulo, ritmoDiario: ritmo, tipoMeta: tipo, valorMeta: valor, totalDias, dias, historico: [] });
+            const dataInicio = new Date().toLocaleDateString('pt-BR');
+            meusLivros.push({ titulo, ritmoDiario: ritmo, tipoMeta: tipo, valorMeta: valor, totalDias, dias, historico: [], dataInicio });
             salvarDados();
             navegarPara('lista');
             
@@ -464,11 +465,22 @@
                 
                 const div = document.createElement('div');
                 div.className = `book-item ${leuHoje ? 'read-today' : ''}`;
+                
+                let porcentagem = livro.totalDias > 0 ? Math.round((lidos / livro.totalDias) * 100) : 0;
+                let dataInicioStr = livro.dataInicio || "Anterior";
+                let diasRestantes = livro.totalDias - lidos;
+                let previsaoData = new Date();
+                previsaoData.setDate(previsaoData.getDate() + (diasRestantes > 0 ? diasRestantes : 0));
+                let previsaoStr = previsaoData.toLocaleDateString('pt-BR');
+
                 div.innerHTML = `
                     <div class="book-info">
                         <div>
-                            <div class="book-title">${livro.titulo}</div>
-                            <div class="book-meta">${lidos} / ${livro.totalDias} dias concluídos (${livro.ritmoDiario} págs/dia)</div>
+                            <div class="book-title">${livro.titulo} <span style="font-size: 0.8rem; font-weight: normal; opacity: 0.8;">(${livro.ritmoDiario} págs/dia)</span></div>
+                            <div class="book-meta" style="margin-top: 4px; line-height: 1.4;">
+                                Concluído: ${lidos} / ${livro.totalDias} dias (${porcentagem}%)<br>
+                                📅 Início: ${dataInicioStr} | 🎯 Término: ${previsaoStr}
+                            </div>
                         </div>
                         <div class="book-actions">
                             <button onclick="abrirTracker(${index})">Abrir</button>
@@ -535,7 +547,22 @@
             document.getElementById('tracker-title').innerText = livro.titulo;
             
             const concluidos = livro.dias.filter(d => d.concluido).length;
-            document.getElementById('progress-text').innerText = `Concluído: ${concluidos} / ${livro.totalDias} dias`;
+            
+            const dataInicioStr = livro.dataInicio || "Anterior";
+            const diasRestantes = livro.totalDias - concluidos;
+            const previsaoData = new Date();
+            // A previsão é o dia de hoje + os dias que faltam marcar
+            previsaoData.setDate(previsaoData.getDate() + (diasRestantes > 0 ? diasRestantes : 0));
+            const previsaoStr = previsaoData.toLocaleDateString('pt-BR');
+            
+            let porcentagemTracker = livro.totalDias > 0 ? Math.round((concluidos / livro.totalDias) * 100) : 0;
+            document.getElementById('progress-text').innerHTML = `
+                <div>Concluído: ${concluidos} / ${livro.totalDias} dias (${porcentagemTracker}%)</div>
+                <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 5px; font-weight: normal; color: #e2e8f0;">
+                    📅 Início: ${dataInicioStr} | 🎯 Término: ${previsaoStr}
+                </div>
+            `;
+
             
             document.getElementById('progress-fill').style.width = `${(concluidos / livro.totalDias) * 100}%`;
 
@@ -681,7 +708,8 @@
             let dias = Array.from({length: totalDias}, () => ({ concluido: false, dataConclusao: null }));
 
             // Atualiza o livro no banco e salva
-            meusLivros[livroAtualIndex] = { ...livro, ritmoDiario: ritmo, totalDias, dias };
+            const novaDataInicio = new Date().toLocaleDateString('pt-BR');
+            meusLivros[livroAtualIndex] = { ...livro, ritmoDiario: ritmo, totalDias, dias, dataInicio: novaDataInicio };
             salvarDados();
             abrirTracker(livroAtualIndex);
         }
