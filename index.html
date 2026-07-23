@@ -592,8 +592,16 @@
                 div.className = `day-item ${dia.concluido ? 'done' : ''} ${isLidoHoje ? 'done-today' : ''}`;
                 div.onclick = () => toggleDia(diaIndex);
                 
+                let paginaInicial = diaIndex * livro.ritmoDiario;
+                let paginaFinal = paginaInicial + parseInt(livro.ritmoDiario);
+                
+                // Se a meta for por páginas, evita que a última página passe do total do livro
+                if (livro.tipoMeta === 'pages' && paginaFinal > livro.valorMeta) {
+                    paginaFinal = livro.valorMeta;
+                }
+                
                 div.innerHTML = `
-                    <span>Dia ${diaIndex + 1} (${livro.ritmoDiario} págs) <small style="color:#48bb78; text-decoration:none; font-size:0.75rem; margin-left:8px; display:${isLidoHoje ? 'inline' : 'none'};">✔ Lido Hoje</small></span>
+                    <span>Dia ${diaIndex + 1} (${paginaInicial} a ${paginaFinal} págs) <small style="color:#48bb78; text-decoration:none; font-size:0.75rem; margin-left:8px; display:${isLidoHoje ? 'inline' : 'none'};">✔ Lido Hoje</small></span>
                     <div class="checkbox"></div>
                 `;
                 checklist.appendChild(div);
