@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#1a202c">
     <style>
         :root {
-            --primary: #f6ad55; /* Laranja remetendo à luz */
+            --primary: #f6ad55;
             --bg-glass: rgba(26, 32, 44, 0.85);
             --text: #e2e8f0;
             --danger: #e53e3e;
@@ -43,6 +43,32 @@
         h1, h2, h3 { text-align: center; margin-top: 0; }
         
         .hidden { display: none !important; }
+
+        /* Estilos do Painel Diário */
+        .daily-dashboard {
+            background: rgba(246, 173, 85, 0.1);
+            border: 1px solid var(--primary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .read-today {
+            opacity: 0.4;
+            border-left-color: #48bb78 !important;
+            filter: grayscale(0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .read-today::after {
+            content: '✔ Lido Hoje';
+            display: block;
+            color: #48bb78;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
 
         /* Formulário de Setup */
         .form-group { margin-bottom: 1.5rem; }
@@ -95,6 +121,7 @@
         button:hover { opacity: 0.9; }
         button.secondary { background-color: rgba(255, 255, 255, 0.2); color: white; }
         button.danger { background-color: var(--danger); color: white; }
+        button.success { background-color: #48bb78; color: white; }
 
         /* Dashboard - Lista de Livros */
         .livros-lista {
@@ -192,12 +219,39 @@
             align-items: center;
             box-sizing: border-box;
         }
+        
+        .day-item.done-today {
+            opacity: 0.3 !important;
+            border-left-color: #48bb78 !important;
+            background: rgba(72, 187, 120, 0.05) !important;
+        }
+        .day-item.done-today .checkbox::after {
+            color: #48bb78 !important;
+        }
+
         .day-item.done .checkbox::after {
             content: '✔';
             color: var(--primary);
             font-size: 1.2rem;
         }
         
+        
+        .history-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            border-left: 3px solid #48bb78;
+        }
+        .history-item {
+            margin-bottom: 0.3rem;
+            opacity: 0.9;
+        }
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
         .no-books {
             text-align: center;
             opacity: 0.6;
@@ -210,11 +264,24 @@
 
     <div class="container" id="lista-screen">
         <h1>Minha Biblioteca</h1>
-        <div class="livros-lista" id="lista-containers">
+        
+        <!-- PAINEL DE META DIÁRIA -->
+        <div class="daily-dashboard">
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Meta de Hoje (75 Páginas)</h3>
+            <div class="progress-header" style="margin-bottom: 0.5rem; font-size: 1rem;">
+                Lido hoje: <span id="pages-today">0</span> / 75 páginas
+            </div>
+            <div class="progress-bar" style="margin-bottom: 1rem;">
+                <div class="progress-fill" id="daily-progress-fill"></div>
+            </div>
+            <div id="daily-details" class="book-meta">Nenhuma leitura registrada hoje.</div>
         </div>
+
+        <div class="livros-lista" id="lista-containers"></div>
         <button onclick="navegarPara('setup')">Adicionar Novo Livro</button>
     </div>
 
+    <!-- TELA SETUP NOVO LIVRO -->
     <div class="container hidden" id="setup-screen">
         <h1>Novo Propósito</h1>
         
@@ -228,16 +295,12 @@
             <div class="radio-group">
                 <input type="radio" id="ritmo05" name="ritmo" value="5">
                 <label for="ritmo05">05 Págs/Dia</label>
-
                 <input type="radio" id="ritmo10" name="ritmo" value="10">
                 <label for="ritmo10">10 Págs/Dia</label>
-
                 <input type="radio" id="ritmo20" name="ritmo" value="20">
                 <label for="ritmo20">20 Págs/Dia</label>
-
                 <input type="radio" id="ritmo50" name="ritmo" value="50" checked>
                 <label for="ritmo50">50 Págs/Dia</label>
-                
                 <input type="radio" id="ritmo70" name="ritmo" value="70">
                 <label for="ritmo70">70 Págs/Dia</label>
             </div>
@@ -249,7 +312,6 @@
                 <option value="pages">Total de Páginas do Livro</option>
                 <option value="days">Total de Dias Desejados</option>
             </select>
-            
             <input type="number" id="inputValue" placeholder="Ex: 350 páginas" required>
         </div>
 
@@ -257,72 +319,373 @@
         <button class="secondary" onclick="navegarPara('lista')">Cancelar</button>
     </div>
 
-    <!-- NOVA TELA DE EDIÇÃO ADICIONADA AQUI -->
+    <!-- TELA DE EDIÇÃO -->
     <div class="container hidden" id="edit-screen">
         <h1>Editar Propósito</h1>
-        
         <div class="form-group">
             <label for="editBookName">Título do Livro:</label>
             <input type="text" id="editBookName" placeholder="Ex: Livro ou Meta Específica" required>
         </div>
-
         <div class="form-group">
-            <label>Ritmo Diário:</label>
+            <label>Ritmo Diário (Apenas para novos dias adicionados):</label>
             <div class="radio-group">
-                <input type="radio" id="editRitmo05" name="editRitmo" value="5">
-                <label for="editRitmo05">05 Págs/Dia</label>
-
-                <input type="radio" id="editRitmo10" name="editRitmo" value="10">
-                <label for="editRitmo10">10 Págs/Dia</label>
-
-                <input type="radio" id="editRitmo20" name="editRitmo" value="20">
-                <label for="editRitmo20">20 Págs/Dia</label>
-
-                <input type="radio" id="editRitmo50" name="editRitmo" value="50">
-                <label for="editRitmo50">50 Págs/Dia</label>
-                
-                <input type="radio" id="editRitmo70" name="editRitmo" value="70">
-                <label for="editRitmo70">70 Págs/Dia</label>
+                <input type="radio" id="editRitmo05" name="editRitmo" value="5"><label for="editRitmo05">05 Págs</label>
+                <input type="radio" id="editRitmo10" name="editRitmo" value="10"><label for="editRitmo10">10 Págs</label>
+                <input type="radio" id="editRitmo20" name="editRitmo" value="20"><label for="editRitmo20">20 Págs</label>
+                <input type="radio" id="editRitmo50" name="editRitmo" value="50"><label for="editRitmo50">50 Págs</label>
+                <input type="radio" id="editRitmo70" name="editRitmo" value="70"><label for="editRitmo70">70 Págs</label>
             </div>
         </div>
-
         <div class="form-group">
             <label for="editInputType">Definir meta por:</label>
             <select id="editInputType">
                 <option value="pages">Total de Páginas do Livro</option>
                 <option value="days">Total de Dias Desejados</option>
             </select>
-            
             <input type="number" id="editInputValue" placeholder="Ex: 350 páginas" required>
         </div>
-
         <button onclick="salvarEdicaoLivro()">Salvar Alterações</button>
         <button class="secondary" onclick="navegarPara('tracker')">Cancelar</button>
     </div>
-    <!-- FIM DA TELA DE EDIÇÃO -->
 
+    <!-- TELA LER NOVAMENTE (REINICIAR) -->
+    <div class="container hidden" id="restart-screen">
+        <h1>Ler Novamente</h1>
+        <p style="text-align: center; margin-bottom: 1.5rem;">Você vai reiniciar o progresso de <strong><span id="restartBookName"></span></strong>. Defina o seu novo ritmo de leitura.</p>
+        
+        <div class="form-group">
+            <label>Novo Ritmo Diário:</label>
+            <div class="radio-group">
+                <input type="radio" id="resRitmo05" name="resRitmo" value="5">
+                <label for="resRitmo05">05 Págs</label>
+                <input type="radio" id="resRitmo10" name="resRitmo" value="10">
+                <label for="resRitmo10">10 Págs</label>
+                <input type="radio" id="resRitmo20" name="resRitmo" value="20">
+                <label for="resRitmo20">20 Págs</label>
+                <input type="radio" id="resRitmo50" name="resRitmo" value="50">
+                <label for="resRitmo50">50 Págs</label>
+                <input type="radio" id="resRitmo70" name="resRitmo" value="70">
+                <label for="resRitmo70">70 Págs</label>
+            </div>
+        </div>
+
+        <button class="success" onclick="confirmarReiniciarLeitura()">Confirmar Novo Ciclo</button>
+        <button class="secondary" onclick="navegarPara('tracker')">Cancelar</button>
+    </div>
+
+    <!-- TELA DO TRACKER -->
     <div class="container hidden" id="tracker-screen">
         <h2 id="tracker-title">Título do Livro</h2>
-        <div class="progress-header" id="progress-text">
-            Concluído: 0 / 0 dias
-        </div>
+        <div class="progress-header" id="progress-text">Concluído: 0 / 0 dias</div>
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
         
-        <div class="checklist" id="checklist">
-        </div>
+        
+        <div id="book-history" class="history-box hidden"></div>
+        
+        <div class="checklist" id="checklist"></div>
 
-        <!-- NOVO BOTÃO DE EDIÇÃO INSERIDO AQUI -->
-        <button class="secondary" onclick="abrirEdicaoLivro()">Editar Livro</button>
-        <button class="secondary" onclick="navegarPara('lista')">Voltar para Biblioteca</button>
-        <button class="danger" onclick="excluirLivroAtual()">Remover este Livro</button>
+        <!-- Botão Principal -->
+        <button class="secondary" onclick="navegarPara('lista')" style="margin-bottom: 0.5rem;">⬅ Voltar para Biblioteca</button>
+        
+        <!-- Botão para abrir/fechar opções -->
+        <button class="secondary" onclick="toggleMenuOpcoes()" style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.2);">⚙️ Mais Opções</button>
+
+        <!-- Menu de Opções (Retraído por padrão) -->
+        <div id="opcoes-menu" class="hidden" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.2);">
+            <button class="success" onclick="abrirReiniciarLeitura()">Ler Novamente (Zerar)</button>
+            <button class="secondary" onclick="abrirEdicaoLivro()">Editar Configurações</button>
+            <button class="danger" onclick="limparHistoricoLivroAtual()" style="background-color: #718096; color: white;">Apagar Histórico Antigo</button>
+            <button class="danger" onclick="excluirLivroAtual()">Remover este Livro</button>
+        </div>
     </div>
 
-    <script src="app.js"></script>
     <script>
+        // Lógica Principal
+        let meusLivros = JSON.parse(localStorage.getItem('livrosTracker')) || [];
+        let livroAtualIndex = null;
+
+                function toggleMenuOpcoes() {
+            document.getElementById('opcoes-menu').classList.toggle('hidden');
+        }
+
+        function salvarDados() {
+            localStorage.setItem('livrosTracker', JSON.stringify(meusLivros));
+        }
+
+        function navegarPara(tela) {
+            document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tela + '-screen').classList.remove('hidden');
+            if (tela === 'lista') {
+                renderListaLivros();
+                atualizarMetaDiaria();
+            }
+        }
+
+        function salvarNovoLivro() {
+            const titulo = document.getElementById('bookName').value;
+            const ritmo = parseInt(document.querySelector('input[name="ritmo"]:checked').value);
+            const tipo = document.getElementById('inputType').value;
+            const valor = parseInt(document.getElementById('inputValue').value);
+
+            if(!titulo || !valor) return alert('Por favor, preencha todos os campos!');
+
+            let totalDias = tipo === 'pages' ? Math.ceil(valor / ritmo) : valor;
+            let dias = Array.from({length: totalDias}, () => ({ concluido: false, dataConclusao: null }));
+
+            meusLivros.push({ titulo, ritmoDiario: ritmo, tipoMeta: tipo, valorMeta: valor, totalDias, dias, historico: [] });
+            salvarDados();
+            navegarPara('lista');
+            
+            document.getElementById('bookName').value = '';
+            document.getElementById('inputValue').value = '';
+        }
+
+        function renderListaLivros() {
+            const container = document.getElementById('lista-containers');
+            container.innerHTML = '';
+            const hoje = new Date().toDateString();
+
+            if (meusLivros.length === 0) {
+                container.innerHTML = '<div class="no-books">Nenhum livro ou propósito criado ainda.</div>';
+                return;
+            }
+
+            meusLivros.forEach((livro, index) => {
+                let lidos = livro.dias.filter(d => d.concluido).length;
+                let leuHoje = livro.dias.some(d => d.concluido && d.dataConclusao === hoje);
+                
+                const div = document.createElement('div');
+                div.className = `book-item ${leuHoje ? 'read-today' : ''}`;
+                div.innerHTML = `
+                    <div class="book-info">
+                        <div>
+                            <div class="book-title">${livro.titulo}</div>
+                            <div class="book-meta">${lidos} / ${livro.totalDias} dias concluídos (${livro.ritmoDiario} págs/dia)</div>
+                        </div>
+                        <div class="book-actions">
+                            <button onclick="abrirTracker(${index})">Abrir</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function atualizarMetaDiaria() {
+            const META_GLOBAL = 75;
+            let totalPaginasHoje = 0;
+            let livrosLidosHoje = [];
+            const hoje = new Date().toDateString();
+
+            meusLivros.forEach(livro => {
+                let leuEsteLivroHoje = false;
+                livro.dias.forEach(dia => {
+                    if (dia.concluido && dia.dataConclusao === hoje) {
+                        totalPaginasHoje += parseInt(livro.ritmoDiario);
+                        leuEsteLivroHoje = true;
+                    }
+                });
+
+                if (leuEsteLivroHoje) {
+                    livrosLidosHoje.push(livro.titulo);
+                }
+            });
+
+            document.getElementById('pages-today').innerText = totalPaginasHoje;
+            
+            let porcentagem = (totalPaginasHoje / META_GLOBAL) * 100;
+            if (porcentagem > 100) porcentagem = 100;
+            
+            const progressFill = document.getElementById('daily-progress-fill');
+            progressFill.style.width = `${porcentagem}%`;
+            
+            if (totalPaginasHoje >= META_GLOBAL) {
+                progressFill.style.background = '#48bb78'; 
+            } else {
+                progressFill.style.background = 'var(--primary)'; 
+            }
+
+            const detalhes = document.getElementById('daily-details');
+            if (livrosLidosHoje.length > 0) {
+                detalhes.innerText = `Atividades de hoje: ${livrosLidosHoje.join(', ')}`;
+            } else {
+                detalhes.innerText = "Nenhuma leitura registrada hoje.";
+            }
+        }
+
+        function abrirTracker(index) {
+            livroAtualIndex = index;
+            navegarPara('tracker');
+            renderTracker();
+        }
+
+        function renderTracker() {
+            const livro = meusLivros[livroAtualIndex];
+
+            
+
+            document.getElementById('tracker-title').innerText = livro.titulo;
+            
+            const concluidos = livro.dias.filter(d => d.concluido).length;
+            document.getElementById('progress-text').innerText = `Concluído: ${concluidos} / ${livro.totalDias} dias`;
+            
+            document.getElementById('progress-fill').style.width = `${(concluidos / livro.totalDias) * 100}%`;
+
+            document.getElementById('opcoes-menu').classList.add('hidden'); // Esconde o menu ao abrir a tela
+
+            const historyBox = document.getElementById('book-history');
+            if (livro.historico && livro.historico.length > 0) {
+                historyBox.innerHTML = `<strong>Histórico de Leituras Anteriores:</strong><br>` + 
+                    livro.historico.map((h, i) => 
+                        `<div class="history-item">▶ Ciclo ${i + 1} encerrado em ${h.dataFim} (Ritmo: ${h.ritmoAntigo} págs/dia)</div>`
+                    ).join('');
+                historyBox.classList.remove('hidden');
+            } else {
+                historyBox.innerHTML = '';
+                historyBox.classList.add('hidden');
+            }
+
+
+            const checklist = document.getElementById('checklist');
+            checklist.innerHTML = '';
+            
+            const dataHojeTracker = new Date().toDateString();
+            
+            livro.dias.forEach((dia, diaIndex) => {
+                const div = document.createElement('div');
+                const isLidoHoje = dia.concluido && dia.dataConclusao === dataHojeTracker;
+                div.className = `day-item ${dia.concluido ? 'done' : ''} ${isLidoHoje ? 'done-today' : ''}`;
+                div.onclick = () => toggleDia(diaIndex);
+                
+                div.innerHTML = `
+                    <span>Dia ${diaIndex + 1} (${livro.ritmoDiario} págs) <small style="color:#48bb78; text-decoration:none; font-size:0.75rem; margin-left:8px; display:${isLidoHoje ? 'inline' : 'none'};">✔ Lido Hoje</small></span>
+                    <div class="checkbox"></div>
+                `;
+                checklist.appendChild(div);
+            });
+        }
+
+        function toggleDia(diaIndex) {
+            const livro = meusLivros[livroAtualIndex];
+
+            
+
+            const dia = livro.dias[diaIndex];
+            
+            dia.concluido = !dia.concluido;
+            dia.dataConclusao = dia.concluido ? new Date().toDateString() : null;
+            
+            salvarDados();
+            renderTracker();
+        }
+
+        
+        function limparHistoricoLivroAtual() {
+            if(confirm('Tem certeza que deseja limpar o histórico de leitura (ciclos antigos) deste livro? O progresso atual não será afetado.')) {
+                meusLivros[livroAtualIndex].historico = [];
+                salvarDados();
+                renderTracker();
+            }
+        }
+
+        function excluirLivroAtual() {
+            if(confirm('Tem certeza que deseja remover este livro da sua lista?')) {
+                meusLivros.splice(livroAtualIndex, 1);
+                salvarDados();
+                navegarPara('lista');
+            }
+        }
+
+        function abrirEdicaoLivro() {
+            const livro = meusLivros[livroAtualIndex];
+
+            
+
+            document.getElementById('editBookName').value = livro.titulo;
+            document.querySelector(`input[name="editRitmo"][value="${livro.ritmoDiario}"]`).checked = true;
+            document.getElementById('editInputType').value = livro.tipoMeta;
+            document.getElementById('editInputValue').value = livro.valorMeta;
+            
+            navegarPara('edit');
+        }
+
+        function salvarEdicaoLivro() {
+            const titulo = document.getElementById('editBookName').value;
+            const ritmo = parseInt(document.querySelector('input[name="editRitmo"]:checked').value);
+            const tipo = document.getElementById('editInputType').value;
+            const valor = parseInt(document.getElementById('editInputValue').value);
+
+            if(!titulo || !valor) return alert('Preencha os campos corretamente!');
+
+            let totalDias = tipo === 'pages' ? Math.ceil(valor / ritmo) : valor;
+            let dias = Array.from({length: totalDias}, (_, i) => {
+                return meusLivros[livroAtualIndex].dias[i] || { concluido: false, dataConclusao: null };
+            });
+
+            meusLivros[livroAtualIndex] = { ...meusLivros[livroAtualIndex], titulo, ritmoDiario: ritmo, tipoMeta: tipo, valorMeta: valor, totalDias, dias };
+            salvarDados();
+            abrirTracker(livroAtualIndex);
+        }
+
+        // --- NOVA LÓGICA DE REINICIAR (LER NOVAMENTE) ---
+        function abrirReiniciarLeitura() {
+            const livro = meusLivros[livroAtualIndex];
+
+            
+
+            document.getElementById('restartBookName').innerText = livro.titulo;
+            
+            // Pré-seleciona o ritmo que já estava sendo usado
+            const radio = document.querySelector(`input[name="resRitmo"][value="${livro.ritmoDiario}"]`);
+            if (radio) radio.checked = true;
+            
+            navegarPara('restart');
+        }
+
+        function confirmarReiniciarLeitura() {
+            const ritmo = parseInt(document.querySelector('input[name="resRitmo"]:checked').value);
+            const livro = meusLivros[livroAtualIndex];
+
+            // --- NOVO: SALVAR HISTÓRICO APENAS AO REINICIAR ---
+            if (!livro.historico) livro.historico = [];
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+            const lidos = livro.dias.filter(d => d.concluido).length;
+            
+            // Só salva no histórico se houver progresso
+            if (lidos > 0) {
+                livro.historico.push({
+                    dataFim: dataHoje,
+                    diasLidos: lidos,
+                    totalDiasAntigo: livro.totalDias,
+                    ritmoAntigo: livro.ritmoDiario
+                });
+            }
+            // ---------------------------------------------------
+
+
+            
+
+            
+            // Recalcula a quantidade total de dias com base no novo ritmo escolhido
+            let totalDias = livro.tipoMeta === 'pages' ? Math.ceil(livro.valorMeta / ritmo) : livro.valorMeta;
+            
+            // Cria um novo array de dias, totalmente limpo (zera o progresso)
+            let dias = Array.from({length: totalDias}, () => ({ concluido: false, dataConclusao: null }));
+
+            // Atualiza o livro no banco e salva
+            meusLivros[livroAtualIndex] = { ...livro, ritmoDiario: ritmo, totalDias, dias };
+            salvarDados();
+            abrirTracker(livroAtualIndex);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            navegarPara('lista');
+        });
+        
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW falhou:', err));
         }
     </script>
 </body>
