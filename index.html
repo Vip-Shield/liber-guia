@@ -145,13 +145,19 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.8rem;
+            gap: 10px;
+        }
+        .book-info > div:first-child {
+            flex: 1;
+            min-width: 0;
         }
         .book-title { font-weight: bold; font-size: 1.1rem; word-break: break-word; }
-        .book-meta { font-size: 0.85rem; opacity: 0.7; white-space: nowrap; }
+        .book-meta { font-size: 0.85rem; opacity: 0.7; word-break: break-word; }
         
         .book-actions {
             display: flex;
             gap: 0.5rem;
+            flex-shrink: 0;
         }
         .book-actions button {
             padding: 0.6rem;
