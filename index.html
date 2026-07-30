@@ -142,6 +142,30 @@
             margin-bottom: 0.8rem;
             border-left: 4px solid var(--primary);
         }
+
+        /* Alertas de Inatividade */
+        .alert-1 { border-left-color: #9b59b6 !important; }
+        .alert-2 { border-left-color: #f1c40f !important; }
+        .alert-3 { border-left-color: #e67e22 !important; }
+        .alert-4 { border-left-color: #e74c3c !important; }
+        .alert-black { border-left-color: #000000 !important; background: rgba(0, 0, 0, 0.6) !important; }
+
+        .badge-alerta {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            vertical-align: middle;
+            font-weight: normal;
+            display: inline-block;
+        }
+
+        .bg-purple { background: #9b59b6 !important; color: white !important; }
+        .bg-yellow { background: #f1c40f !important; color: black !important; }
+        .bg-orange { background: #e67e22 !important; color: white !important; }
+        .bg-red { background: #e74c3c !important; color: white !important; }
+        .bg-black { background: #000000 !important; color: white !important; border: 1px solid rgba(255,255,255,0.3); }
+
         .book-info {
             display: flex;
             justify-content: space-between;
@@ -464,9 +488,60 @@
             meusLivros.forEach((livro, index) => {
                 let lidos = livro.dias.filter(d => d.concluido).length;
                 let leuHoje = livro.dias.some(d => d.concluido && d.dataConclusao === hoje);
+
+                // Lógica de alerta de inatividade adicionada
+                let dataMaisRecenteObj = null;
+
+                if (livro.dataInicio) {
+                    const partesInicio = livro.dataInicio.split('/');
+                    if (partesInicio.length === 3) {
+                        dataMaisRecenteObj = new Date(partesInicio[2], partesInicio[1] - 1, partesInicio[0]);
+                    }
+                }
+
+                livro.dias.forEach(d => {
+                    if (d.concluido && d.dataConclusao) {
+                        const dataConcObj = new Date(d.dataConclusao);
+                        if (!dataMaisRecenteObj || dataConcObj > dataMaisRecenteObj) {
+                            dataMaisRecenteObj = dataConcObj;
+                        }
+                    }
+                });
+
+                let diffDays = 0;
+                if (dataMaisRecenteObj) {
+                    const hojeObj = new Date();
+                    hojeObj.setHours(0, 0, 0, 0);
+                    dataMaisRecenteObj.setHours(0, 0, 0, 0);
+                    diffDays = Math.max(0, Math.floor((hojeObj - dataMaisRecenteObj) / (1000 * 60 * 60 * 24)));
+                }
+
+                let alertClass = '';
+                let alertBadge = '';
+                
+                if (!leuHoje && livro.totalDias > lidos) {
+                    if (diffDays === 1) {
+                        alertClass = ' alert-1';
+                        alertBadge = '<span class="badge-alerta bg-purple">Amanhã (1 dia inativo)</span>';
+                    } else if (diffDays === 2) {
+                        alertClass = ' alert-2';
+                        alertBadge = '<span class="badge-alerta bg-yellow">2 dias inativos</span>';
+                    } else if (diffDays === 3) {
+                        alertClass = ' alert-3';
+                        alertBadge = '<span class="badge-alerta bg-orange">3 dias inativos</span>';
+                    } else if (diffDays >= 4 && diffDays <= 7) {
+                        const niveis = ['I', 'II', 'III', 'IV'];
+                        const nivel = niveis[diffDays - 4];
+                        alertClass = ' alert-4';
+                        alertBadge = `<span class="badge-alerta bg-red">Alerta ${nivel} (${diffDays} dias)</span>`;
+                    } else if (diffDays >= 8) {
+                        alertClass = ' alert-black';
+                        alertBadge = `<span class="badge-alerta bg-black">Alerta Máximo (${diffDays} dias)</span>`;
+                    }
+                }
                 
                 const div = document.createElement('div');
-                div.className = `book-item ${leuHoje ? 'read-today' : ''}`;
+                div.className = `book-item ${leuHoje ? 'read-today' : ''}${alertClass}`;
                 
                 let porcentagem = livro.totalDias > 0 ? Math.round((lidos / livro.totalDias) * 100) : 0;
                 let dataInicioStr = livro.dataInicio || "Anterior";
@@ -478,7 +553,7 @@
                 div.innerHTML = `
                     <div class="book-info">
                         <div>
-                            <div class="book-title">${livro.titulo} <span style="font-size: 0.8rem; font-weight: normal; opacity: 0.8;">(${livro.ritmoDiario} págs/dia)</span></div>
+                            <div class="book-title">${livro.titulo} <span style="font-size: 0.8rem; font-weight: normal; opacity: 0.8;">(${livro.ritmoDiario} págs/dia)</span> ${alertBadge}</div>
                             <div class="book-meta" style="margin-top: 4px; line-height: 1.4;">
                                 Concluído: ${lidos} / ${livro.totalDias} dias (${porcentagem}%)<br>
                                 📅 Início: ${dataInicioStr} | 🎯 Término: ${previsaoStr}
