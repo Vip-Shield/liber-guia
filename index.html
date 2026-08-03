@@ -8,12 +8,18 @@
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a202c">
+    
+    <!-- Biblioteca para os fogos de artifício -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         :root {
             --primary: #f6ad55;
             --bg-glass: rgba(26, 32, 44, 0.85);
             --text: #e2e8f0;
             --danger: #e53e3e;
+            --success: #48bb78;
+            --gold: #ffd700;
         }
 
         body {
@@ -58,7 +64,7 @@
 
         .read-today {
             opacity: 0.4;
-            border-left-color: #48bb78 !important;
+            border-left-color: var(--success) !important;
             filter: grayscale(0.8);
             transition: all 0.3s ease;
         }
@@ -66,10 +72,40 @@
         .read-today::after {
             content: '✔ Lido Hoje';
             display: block;
-            color: #48bb78;
+            color: var(--success);
             font-size: 0.8rem;
             font-weight: bold;
             margin-top: 5px;
+        }
+
+        /* Estilo para Livros Concluídos */
+        .book-completed {
+            border-left-color: var(--gold) !important;
+            background: rgba(255, 215, 0, 0.05) !important;
+            opacity: 0.4; /* Deixa o card apagado */
+            filter: grayscale(0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .book-completed:hover {
+            opacity: 0.8;
+            filter: grayscale(0);
+        }
+
+        .congratulations-msg {
+            color: var(--gold);
+            font-weight: bold;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
         /* Formulário de Setup */
@@ -123,7 +159,7 @@
         button:hover { opacity: 0.9; }
         button.secondary { background-color: rgba(255, 255, 255, 0.2); color: white; }
         button.danger { background-color: var(--danger); color: white; }
-        button.success { background-color: #48bb78; color: white; }
+        button.success { background-color: var(--success); color: white; }
 
         /* Dashboard - Lista de Livros */
         .livros-lista {
@@ -165,6 +201,7 @@
         .bg-orange { background: #e67e22 !important; color: white !important; }
         .bg-red { background: #e74c3c !important; color: white !important; }
         .bg-black { background: #000000 !important; color: white !important; border: 1px solid rgba(255,255,255,0.3); }
+        .bg-gold { background: var(--gold) !important; color: black !important; font-weight: bold; }
 
         .book-info {
             display: flex;
@@ -254,11 +291,11 @@
         
         .day-item.done-today {
             opacity: 0.3 !important;
-            border-left-color: #48bb78 !important;
+            border-left-color: var(--success) !important;
             background: rgba(72, 187, 120, 0.05) !important;
         }
         .day-item.done-today .checkbox::after {
-            color: #48bb78 !important;
+            color: var(--success) !important;
         }
 
         .day-item.done .checkbox::after {
@@ -267,14 +304,13 @@
             font-size: 1.2rem;
         }
         
-        
         .history-box {
             background: rgba(0, 0, 0, 0.2);
             padding: 0.8rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
             font-size: 0.85rem;
-            border-left: 3px solid #48bb78;
+            border-left: 3px solid var(--success);
         }
         .history-item {
             margin-bottom: 0.3rem;
@@ -438,7 +474,7 @@
         let meusLivros = JSON.parse(localStorage.getItem('livrosTracker')) || [];
         let livroAtualIndex = null;
 
-                function toggleMenuOpcoes() {
+        function toggleMenuOpcoes() {
             document.getElementById('opcoes-menu').classList.toggle('hidden');
         }
 
@@ -488,8 +524,9 @@
             meusLivros.forEach((livro, index) => {
                 let lidos = livro.dias.filter(d => d.concluido).length;
                 let leuHoje = livro.dias.some(d => d.concluido && d.dataConclusao === hoje);
+                let isCompleted = lidos === livro.totalDias && livro.totalDias > 0; // Verifica se o livro foi concluído
 
-                // Lógica de alerta de inatividade adicionada
+                // Lógica de alerta de inatividade
                 let dataMaisRecenteObj = null;
 
                 if (livro.dataInicio) {
@@ -519,7 +556,11 @@
                 let alertClass = '';
                 let alertBadge = '';
                 
-                if (!leuHoje && livro.totalDias > lidos) {
+                // Se foi concluído, mostra o selo e apaga o card
+                if (isCompleted) {
+                    alertClass = ' book-completed';
+                    alertBadge = '<span class="badge-alerta bg-gold">🎉 Concluído</span>';
+                } else if (!leuHoje && livro.totalDias > lidos) {
                     if (diffDays === 1) {
                         alertClass = ' alert-1';
                         alertBadge = '<span class="badge-alerta bg-purple">Amanhã (1 dia inativo)</span>';
@@ -541,7 +582,7 @@
                 }
                 
                 const div = document.createElement('div');
-                div.className = `book-item ${leuHoje ? 'read-today' : ''}${alertClass}`;
+                div.className = `book-item ${leuHoje && !isCompleted ? 'read-today' : ''}${alertClass}`;
                 
                 let porcentagem = livro.totalDias > 0 ? Math.round((lidos / livro.totalDias) * 100) : 0;
                 let dataInicioStr = livro.dataInicio || "Anterior";
@@ -556,7 +597,7 @@
                             <div class="book-title">${livro.titulo} <span style="font-size: 0.8rem; font-weight: normal; opacity: 0.8;">(${livro.ritmoDiario} págs/dia)</span> ${alertBadge}</div>
                             <div class="book-meta" style="margin-top: 4px; line-height: 1.4;">
                                 Concluído: ${lidos} / ${livro.totalDias} dias (${porcentagem}%)<br>
-                                📅 Início: ${dataInicioStr} | 🎯 Término: ${previsaoStr}
+                                📅 Início: ${dataInicioStr} | 🎯 ${isCompleted ? 'Finalizado' : 'Término: ' + previsaoStr}
                             </div>
                         </div>
                         <div class="book-actions">
@@ -597,7 +638,7 @@
             progressFill.style.width = `${porcentagem}%`;
             
             if (totalPaginasHoje >= META_GLOBAL) {
-                progressFill.style.background = '#48bb78'; 
+                progressFill.style.background = 'var(--success)'; 
             } else {
                 progressFill.style.background = 'var(--primary)'; 
             }
@@ -619,31 +660,37 @@
         function renderTracker() {
             const livro = meusLivros[livroAtualIndex];
 
-            
-
             document.getElementById('tracker-title').innerText = livro.titulo;
             
             const concluidos = livro.dias.filter(d => d.concluido).length;
+            const isCompleted = concluidos === livro.totalDias && livro.totalDias > 0;
             
             const dataInicioStr = livro.dataInicio || "Anterior";
             const diasRestantes = livro.totalDias - concluidos;
             const previsaoData = new Date();
-            // A previsão é o dia de hoje + os dias que faltam marcar
             previsaoData.setDate(previsaoData.getDate() + (diasRestantes > 0 ? diasRestantes : 0));
             const previsaoStr = previsaoData.toLocaleDateString('pt-BR');
             
             let porcentagemTracker = livro.totalDias > 0 ? Math.round((concluidos / livro.totalDias) * 100) : 0;
-            document.getElementById('progress-text').innerHTML = `
+            
+            // Adiciona mensagem de parabéns se o livro estiver totalmente concluído
+            let progressTextHTML = `
                 <div>Concluído: ${concluidos} / ${livro.totalDias} dias (${porcentagemTracker}%)</div>
                 <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 5px; font-weight: normal; color: #e2e8f0;">
-                    📅 Início: ${dataInicioStr} | 🎯 Término: ${previsaoStr}
+                    📅 Início: ${dataInicioStr} | 🎯 ${isCompleted ? 'Finalizado' : 'Término: ' + previsaoStr}
                 </div>
             `;
 
-            
-            document.getElementById('progress-fill').style.width = `${(concluidos / livro.totalDias) * 100}%`;
+            if (isCompleted) {
+                progressTextHTML += `<div class="congratulations-msg">🎉 Parabéns! Leitura Concluída! 🎉</div>`;
+                document.getElementById('progress-fill').style.background = 'var(--gold)';
+            } else {
+                document.getElementById('progress-fill').style.background = 'var(--primary)';
+            }
 
-            document.getElementById('opcoes-menu').classList.add('hidden'); // Esconde o menu ao abrir a tela
+            document.getElementById('progress-text').innerHTML = progressTextHTML;
+            document.getElementById('progress-fill').style.width = `${porcentagemTracker}%`;
+            document.getElementById('opcoes-menu').classList.add('hidden');
 
             const historyBox = document.getElementById('book-history');
             if (livro.historico && livro.historico.length > 0) {
@@ -656,7 +703,6 @@
                 historyBox.innerHTML = '';
                 historyBox.classList.add('hidden');
             }
-
 
             const checklist = document.getElementById('checklist');
             checklist.innerHTML = '';
@@ -672,13 +718,12 @@
                 let paginaInicial = diaIndex * livro.ritmoDiario;
                 let paginaFinal = paginaInicial + parseInt(livro.ritmoDiario);
                 
-                // Se a meta for por páginas, evita que a última página passe do total do livro
                 if (livro.tipoMeta === 'pages' && paginaFinal > livro.valorMeta) {
                     paginaFinal = livro.valorMeta;
                 }
                 
                 div.innerHTML = `
-                    <span>Dia ${diaIndex + 1} (${paginaInicial} a ${paginaFinal} págs) <small style="color:#48bb78; text-decoration:none; font-size:0.75rem; margin-left:8px; display:${isLidoHoje ? 'inline' : 'none'};">✔ Lido Hoje</small></span>
+                    <span>Dia ${diaIndex + 1} (${paginaInicial} a ${paginaFinal} págs) <small style="color:var(--success); text-decoration:none; font-size:0.75rem; margin-left:8px; display:${isLidoHoje ? 'inline' : 'none'};">✔ Lido Hoje</small></span>
                     <div class="checkbox"></div>
                 `;
                 checklist.appendChild(div);
@@ -687,18 +732,56 @@
 
         function toggleDia(diaIndex) {
             const livro = meusLivros[livroAtualIndex];
-
-            
-
             const dia = livro.dias[diaIndex];
+            
+            // Verifica se o livro já estava concluído antes da marcação atual
+            const estavaConcluido = livro.dias.every(d => d.concluido);
             
             dia.concluido = !dia.concluido;
             dia.dataConclusao = dia.concluido ? new Date().toDateString() : null;
+            
+            // Verifica se o livro ficou totalmente concluído após a marcação
+            const estaConcluido = livro.dias.every(d => d.concluido);
+            
+            // Dispara a animação e o alerta caso o status mude para "Concluído"
+            if (!estavaConcluido && estaConcluido) {
+                dispararFogos();
+                setTimeout(() => {
+                    alert(`Parabéns! Você concluiu a leitura de "${livro.titulo}"! 🎉`);
+                }, 500);
+            }
             
             salvarDados();
             renderTracker();
         }
 
+        function dispararFogos() {
+            if (typeof confetti === 'function') {
+                var duration = 3 * 1000;
+                var end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#f6ad55', '#ffd700', '#48bb78']
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#f6ad55', '#ffd700', '#48bb78']
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+            }
+        }
         
         function limparHistoricoLivroAtual() {
             if(confirm('Tem certeza que deseja limpar o histórico de leitura (ciclos antigos) deste livro? O progresso atual não será afetado.')) {
@@ -718,9 +801,6 @@
 
         function abrirEdicaoLivro() {
             const livro = meusLivros[livroAtualIndex];
-
-            
-
             document.getElementById('editBookName').value = livro.titulo;
             document.querySelector(`input[name="editRitmo"][value="${livro.ritmoDiario}"]`).checked = true;
             document.getElementById('editInputType').value = livro.tipoMeta;
@@ -747,15 +827,10 @@
             abrirTracker(livroAtualIndex);
         }
 
-        // --- NOVA LÓGICA DE REINICIAR (LER NOVAMENTE) ---
         function abrirReiniciarLeitura() {
             const livro = meusLivros[livroAtualIndex];
-
-            
-
             document.getElementById('restartBookName').innerText = livro.titulo;
             
-            // Pré-seleciona o ritmo que já estava sendo usado
             const radio = document.querySelector(`input[name="resRitmo"][value="${livro.ritmoDiario}"]`);
             if (radio) radio.checked = true;
             
@@ -766,12 +841,10 @@
             const ritmo = parseInt(document.querySelector('input[name="resRitmo"]:checked').value);
             const livro = meusLivros[livroAtualIndex];
 
-            // --- NOVO: SALVAR HISTÓRICO APENAS AO REINICIAR ---
             if (!livro.historico) livro.historico = [];
             const dataHoje = new Date().toLocaleDateString('pt-BR');
             const lidos = livro.dias.filter(d => d.concluido).length;
             
-            // Só salva no histórico se houver progresso
             if (lidos > 0) {
                 livro.historico.push({
                     dataFim: dataHoje,
@@ -780,19 +853,10 @@
                     ritmoAntigo: livro.ritmoDiario
                 });
             }
-            // ---------------------------------------------------
 
-
-            
-
-            
-            // Recalcula a quantidade total de dias com base no novo ritmo escolhido
             let totalDias = livro.tipoMeta === 'pages' ? Math.ceil(livro.valorMeta / ritmo) : livro.valorMeta;
-            
-            // Cria um novo array de dias, totalmente limpo (zera o progresso)
             let dias = Array.from({length: totalDias}, () => ({ concluido: false, dataConclusao: null }));
 
-            // Atualiza o livro no banco e salva
             const novaDataInicio = new Date().toLocaleDateString('pt-BR');
             meusLivros[livroAtualIndex] = { ...livro, ritmoDiario: ritmo, totalDias, dias, dataInicio: novaDataInicio };
             salvarDados();
