@@ -52,6 +52,84 @@
         
         .hidden { display: none !important; }
 
+        /* Estilos do Cabeçalho com Engrenagem */
+        .cabecalho-app {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .cabecalho-app h1 {
+            flex-grow: 1;
+            text-align: center;
+            margin: 0;
+        }
+
+        .spacer {
+            width: 40px; /* Mesma largura da engrenagem para centralizar o H1 perfeitamente */
+        }
+
+        .menu-engrenagem-container {
+            position: relative;
+            width: 40px;
+            text-align: right;
+        }
+
+        .btn-engrenagem {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            margin: 0;
+            color: var(--text);
+        }
+        
+        .btn-engrenagem:hover {
+            opacity: 0.8;
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: #2d3748; /* Cor que combina com o tema */
+            min-width: 140px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin-top: 10px;
+        }
+
+        .menu-dropdown button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 0;
+            background: none;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            margin: 0;
+        }
+
+        .menu-dropdown button:last-child {
+            border-bottom: none;
+        }
+
+        .menu-dropdown button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
         /* Estilos do Painel Diário */
         .daily-dashboard {
             background: rgba(246, 173, 85, 0.1);
@@ -331,7 +409,21 @@
 <body>
 
     <div class="container" id="lista-screen">
-        <h1>Minha Biblioteca</h1>
+        
+        <!-- Cabeçalho Novo com Engrenagem e Menus de Salvar/Importar -->
+        <header class="cabecalho-app">
+            <div class="spacer"></div>
+            <h1>Minha Biblioteca</h1>
+            <div class="menu-engrenagem-container">
+                <button id="btn-engrenagem" class="btn-engrenagem" title="Configurações" onclick="toggleMenuEngrenagem(event)">⚙️</button>
+                <div id="menu-opcoes-header" class="menu-dropdown hidden">
+                    <button onclick="exportarBackup()">💾 Salvar</button>
+                    <button onclick="document.getElementById('file-import').click()">📂 Importar</button>
+                    <!-- Input invisível para carregar o arquivo -->
+                    <input type="file" id="file-import" style="display: none;" accept=".json" onchange="importarBackup(event)">
+                </div>
+            </div>
+        </header>
         
         <!-- PAINEL DE META DIÁRIA -->
         <div class="daily-dashboard">
@@ -473,6 +565,68 @@
         // Lógica Principal
         let meusLivros = JSON.parse(localStorage.getItem('livrosTracker')) || [];
         let livroAtualIndex = null;
+
+        /* NOVAS FUNÇÕES: Menu Engrenagem, Salvar e Importar */
+        function toggleMenuEngrenagem(event) {
+            event.stopPropagation();
+            document.getElementById('menu-opcoes-header').classList.toggle('hidden');
+        }
+
+        // Fecha o menu de engrenagem se clicar em qualquer outro lugar
+        document.addEventListener('click', function(event) {
+            const container = document.querySelector('.menu-engrenagem-container');
+            const menu = document.getElementById('menu-opcoes-header');
+            if (container && !container.contains(event.target)) {
+                if (menu && !menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                }
+            }
+        });
+
+        // Exportar a biblioteca para um arquivo JSON (Salvar)
+        function exportarBackup() {
+            if (meusLivros.length === 0) {
+                alert('Sua biblioteca está vazia. Não há o que salvar.');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(meusLivros));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "backup_biblioteca.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            document.getElementById('menu-opcoes-header').classList.add('hidden');
+        }
+
+        // Importar a biblioteca a partir de um arquivo JSON (Importar)
+        function importarBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dadosImportados = JSON.parse(e.target.result);
+                    if (Array.isArray(dadosImportados)) {
+                        meusLivros = dadosImportados;
+                        salvarDados();
+                        renderListaLivros();
+                        atualizarMetaDiaria();
+                        alert('Biblioteca importada com sucesso!');
+                    } else {
+                        alert('Arquivo inválido. O formato do backup está incorreto.');
+                    }
+                } catch (error) {
+                    alert('Erro ao ler o arquivo: ' + error.message);
+                }
+                // Limpa o valor para permitir reimportar o mesmo arquivo se necessário
+                event.target.value = '';
+                document.getElementById('menu-opcoes-header').classList.add('hidden');
+            };
+            reader.readAsText(file);
+        }
+        /* FIM DAS NOVAS FUNÇÕES */
 
         function toggleMenuOpcoes() {
             document.getElementById('opcoes-menu').classList.toggle('hidden');
